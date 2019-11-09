@@ -59,7 +59,7 @@ function result = depth_rectified_images()
     min_error = 10000;
     result = uint8(zeros(height, width, 3));
     best_lambda = 0;
-    for lambda = 1:2
+    for lambda = 1:200
         pairwise = sparse(i, j, lambda, nodes_count, nodes_count);
         [label, ~, ~] = GCMex(class, single(unary), pairwise, label_cost, 1);
         label = reshape(label, [height, width]);
@@ -67,7 +67,7 @@ function result = depth_rectified_images()
         error = sum(abs(label - depth), 'all') / nodes_count;
         if error < min_error
             min_error = error;
-            result = img;
+            result = label;
             best_lambda = lambda;
         end
     end
