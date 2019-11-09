@@ -1,4 +1,4 @@
-function img = noise_remove()
+function result = noise_remove()
     addpath('..')
     source_color = [0, 0, 255]';
     sink_color = [245, 210, 110]';
@@ -9,7 +9,7 @@ function img = noise_remove()
     input = reshape(input, [nodes_count, 3])';
     
     unary = [sum(abs(input - source_color), 1); sum(abs(input - sink_color), 1)] / 3;
-    initial_class = double(unary(1, :) >= unary(2, :));
+    class = double(unary(1, :) >= unary(2, :));
     total_edges = (width - 1) * height + (height - 1) * width;
     i = zeros(total_edges, 1);
     j = zeros(total_edges, 1);
@@ -43,12 +43,12 @@ function img = noise_remove()
     end
     
     min_error = 10000;
-    best_result = uint8(zeros(height, width, 3));
+    result = uint8(zeros(height, width, 3));
     best_lambda = 0;
     for lambda = 1:200
         pairwise = sparse(i, j, lambda, nodes_count, nodes_count);
         label_cost = single([0, 1; 1, 0]);
-        [label, ~, ~] = GCMex(initial_class, single(unary), pairwise, label_cost, 0);
+        [label, ~, ~] = GCMex(class, single(unary), pairwise, label_cost, 0);
         label = reshape(label, [height, width]);
         img = zeros(height, width, 3);
         for y = 1:height
@@ -63,7 +63,7 @@ function img = noise_remove()
         error = sum(sum(abs(img - validate), 3)/3, 'all')/nodes_count;
         if error < min_error
             min_error = error;
-            best_result = img;
+            result = img;
             best_lambda = lambda;
         end
         
@@ -73,5 +73,5 @@ function img = noise_remove()
         end
     end
     disp(int2str(best_lambda));
-    imshow(uint8(best_result));
+    imshow(uint8(result));
 end
