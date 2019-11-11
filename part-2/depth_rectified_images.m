@@ -16,9 +16,9 @@ function result = depth_rectified_images()
     unary = zeros(80, nodes_count);
     for disparity = d
         displacement = disparity - 40;
-        padding = zeros(height, displacement, 3);
+        padding = zeros(height, abs(displacement), 3);
         if displacement < 0
-            unary(disparity, :) = reshape(sum(abs(cat(2, image2(:, -displacement+1:nodes_count, :), padding) - image1), 3) / 3, 1, nodes_count);
+            unary(disparity, :) = reshape(sum(abs(cat(2, image2(:, -displacement+1:width, :), padding) - image1), 3) / 3, 1, nodes_count);
 %             unary(disparity, :) = sum(abs(cat(2, image2(1, -displacement+1:nodes_count, :), zeros(1, -displacement, 3)) - image1), 3) / 3;
         else
             unary(disparity, :) = reshape(sum(abs(cat(2, padding, image2(:, 1:width - displacement, :)) - image1), 3) / 3, 1, nodes_count);
@@ -66,7 +66,7 @@ function result = depth_rectified_images()
     min_error = 10000;
     result = uint8(zeros(height, width, 3));
     best_lambda = 0;
-    for lambda = 1:200
+    for lambda = 1:50
         pairwise = sparse(i, j, lambda, nodes_count, nodes_count);
         [label, ~, ~] = GCMex(class, single(unary), pairwise, label_cost, 1);
         label = reshape(abs(label-40), [height, width]);
