@@ -4,8 +4,8 @@ function result = depth_rectified_images()
     image2 = double(imread('im6.png'));
     [height, width, ~] = size(image1);
     nodes_count = width * height;
-    image1 = reshape(image1, 1, nodes_count, 3);
-    image2 = reshape(image2, 1, nodes_count, 3);
+%     image1 = reshape(image1, 1, nodes_count, 3);
+%     image2 = reshape(image2, 1, nodes_count, 3);
     
     depth = rgb2gray(im2double(imread('depth.png')));
     [d_height, d_width] = size(depth);
@@ -15,18 +15,21 @@ function result = depth_rectified_images()
     d = 1:80;
     unary = zeros(80, nodes_count);
     for disparity = d
-        displacement = (disparity - 40) * height;
+        displacement = disparity - 40;
+        padding = zeros(height, displacement, 3);
         if displacement < 0
-            unary(disparity, :) = sum(abs(cat(2, image2(1, -displacement+1:nodes_count, :), zeros(1, -displacement, 3)) - image1), 3) / 3;
+            unary(disparity, :) = reshape(sum(abs(cat(2, image2(:, -displacement+1:nodes_count, :), padding) - image1), 3) / 3, 1, nodes_count);
+%             unary(disparity, :) = sum(abs(cat(2, image2(1, -displacement+1:nodes_count, :), zeros(1, -displacement, 3)) - image1), 3) / 3;
         else
-            unary(disparity, :) = sum(abs(cat(2, zeros(1, displacement, 3), image2(1, 1:nodes_count - displacement, :)) - image1), 3) / 3;
+            unary(disparity, :) = reshape(sum(abs(cat(2, padding, image2(:, 1:width - displacement, :)) - image1), 3) / 3, 1, nodes_count);
+%             unary(disparity, :) = sum(abs(cat(2, zeros(1, displacement, 3), image2(1, 1:nodes_count - displacement, :)) - image1), 3) / 3;
         end
     end
     
     [~, class] = min(unary); 
     class = class - 1;
     
-    label_cost = single(log(1 + ((d - d').^2) / 2));
+    label_cost = single(log(1 + ((d - d').^2) / 2)); % ???
     
     total_edges = (width - 1) * height + (height - 1) * width;
     i = zeros(total_edges, 1);
@@ -66,7 +69,7 @@ function result = depth_rectified_images()
     for lambda = 1:200
         pairwise = sparse(i, j, lambda, nodes_count, nodes_count);
         [label, ~, ~] = GCMex(class, single(unary), pairwise, label_cost, 1);
-        label = reshape(label, [height, width]);
+        label = reshape(abs(label-40), [height, width]);
         label = mat2gray(label);
         error = sum(abs(label - depth), 'all') / nodes_count;
         if error < min_error
