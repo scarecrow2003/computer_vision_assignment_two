@@ -12,11 +12,15 @@ function result = depth_rectified_images()
     depth = resample(depth', width, d_width);
     depth = resample(depth', height, d_height);
     
-    d = 1:50;
-    unary = zeros(50, nodes_count);
+    d = 1:80;
+    unary = zeros(80, nodes_count);
     for disparity = d
-        displacement = disparity * height;
-        unary(disparity, :) = sum(abs(cat(2, zeros(1, displacement, 3), image2(1, 1:nodes_count - displacement, :)) - image1), 3) / 3;
+        displacement = (disparity - 40) * height;
+        if displacement < 0
+            unary(disparity, :) = sum(abs(cat(2, image2(1, -displacement+1:nodes_count, :), zeros(1, -displacement, 3)) - image1), 3) / 3;
+        else
+            unary(disparity, :) = sum(abs(cat(2, zeros(1, displacement, 3), image2(1, 1:nodes_count - displacement, :)) - image1), 3) / 3;
+        end
     end
     
     [~, class] = min(unary); 
