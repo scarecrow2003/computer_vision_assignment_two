@@ -69,6 +69,7 @@ function result = noise_remove()
         
         % show result of some lambda value
         if lambda == 1 || lambda == 10 || lambda == 50 || lambda == 100 || lambda == 150 || lambda == 200
+            figure;
             imshow(uint8(img));
         end
     end
