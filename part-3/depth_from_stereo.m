@@ -92,7 +92,7 @@ function result = depth_from_stereo()
     label_cost = single(min(step .* abs(x - y), eta));
 
     [label, ~, ~] = GCMex(class, single(unary), pairwise, label_cost, 1);
-    label = reshape(label , [height, widht]);
+    label = reshape(label , [height, width]);
     result = mat2gray(label);
     imshow(result)
 end
