@@ -21,44 +21,32 @@ function result = initialization1()
     current = 1;
     for x = 1:width
         for y = 1:height
-            node = (x - 1) * height + y;
+            n = (x - 1) * height + y;
             if y < height
-                i(current) = node;
-                j(current) = node + 1;
+                i(current) = n;
+                j(current) = n + 1;
                 current = current + 1;
             end
             if y > 1
-                i(current) = node;
-                j(current) = node - 1;
+                i(current) = n;
+                j(current) = n - 1;
                 current = current + 1;
             end
             if x < width
-                i(current) = node;
-                j(current) = node + height;
+                i(current) = n;
+                j(current) = n + height;
                 current = current + 1;
             end
             if x > 1
-                i(current) = node;
-                j(current) = node - height;
+                i(current) = n;
+                j(current) = n - height;
                 current = current + 1;
             end
         end
     end
     
-    epsilon = 50;
-    n = 4 .* ones(height, width);
-    n(:, 1) = 3;
-    n(:, end) = 3;
-    n(1, :) = 3;
-    n(end, :) = 3;
-    n(1, 1) = 2;
-    n(1, end) = 2;
-    n(end, 1) = 2;
-    n(end, end) = 2;
-    n = reshape(n, 1,nodes_count);
-    
     eta=0.05.*(max_displacement-min_displacement);
-    
+    epsilon=50;
     ws=5./(max_displacement-min_displacement);
     sigmac=10;
     sigmad=2.5;
@@ -67,7 +55,16 @@ function result = initialization1()
 
     
 
-    
+    nei=4.*ones(height,width);
+    nei(:,1)=3;
+    nei(:,end)=3;
+    nei(1,:)=3;
+    nei(end,:)=3;
+    nei(1,1)=2;
+    nei(1,end)=2;
+    nei(end,1)=2;
+    nei(end,end)=2;
+    nei=reshape(nei,1,nodes_count);
 
     [label_X,label_Y]=meshgrid(1:displacement,1:displacement);
     labelcost=min(step.*abs(label_X-label_Y),eta);
@@ -75,23 +72,23 @@ function result = initialization1()
     [X,Y]=meshgrid(1:width,1:height);
     loc_cen=[X(:)';Y(:)';ones(1,nodes_count)];
 
-    for n_current=nei_num:140-nei_num
-        img_cen=double(imread([['Road' filesep 'src' filesep 'test'],sprintf('%04d',n_current),'.jpg']));
+    for n=nei_num:140-nei_num
+        img_cen=double(imread([['Road' filesep 'src' filesep 'test'],sprintf('%04d',n),'.jpg']));
         img_cen_prime=reshape(img_cen,1,nodes_count,3);
 
-        seq=n_current*7;
+        seq=n*7;
         K_cen=cameras(:,1+seq:3+seq)';
         R_cen=cameras(:,4+seq:6+seq)';
         T_cen=cameras(:,7+seq);
 
         lambda=1./(sqrt(sum((img_cen_prime(1,i,:)-img_cen_prime(1,j,:)).^2,3))+epsilon);
         prior=sparse(i,j,lambda);
-        u=n./full(sum(prior));
+        u=nei./full(sum(prior));
         lambda=ws.*lambda.*u(i);
         pairwise=sparse(i,j,lambda);
 
         L_init=zeros(displacement,nodes_count);
-        for b=[n_current-3,n_current-2,n_current-1,n_current+1,n_current+2,n_current+3]
+        for b=[n-3,n-2,n-1,n+1,n+2,n+3]
             img_nei=double(imread([['Road' filesep 'src' filesep 'test'],sprintf('%04d',b),'.jpg']));
             seq=b*7;
             K_nei=cameras(:,1+seq:3+seq)';
@@ -114,8 +111,8 @@ function result = initialization1()
         [label,~,~] = GCMex(segclass,single(unary),pairwise,single(labelcost),1);
         label=reshape(label,height,width);
         result=mat2gray(label);
-        imwrite(result,[['initialization' filesep 'test'],sprintf('%04d',n_current),'.jpg']);
-        save([['initialization' filesep 'test'],sprintf('%04d',n_current),'.mat'],'label');
+        imwrite(result,[['initialization' filesep 'test'],sprintf('%04d',n),'.jpg']);
+        save([['initialization' filesep 'test'],sprintf('%04d',n),'.mat'],'label');
     end
 
 end
