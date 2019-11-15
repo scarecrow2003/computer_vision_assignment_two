@@ -9,12 +9,6 @@ function result = initialization()
     file = fopen(['Road' filesep 'cameras.txt'], 'r');
     cameras = fscanf(file, '%f %f %f', [3, Inf]);
     fclose(file);
-%     k1 = cameras(:, 1:3)';
-%     r1 = cameras(:, 4:6)';
-%     t1 = cameras(:, 7);
-%     k2 = cameras(:, 8:10)';
-%     r2 = cameras(:, 11:13)';
-%     t2 = cameras(:, 14);
     
     min_displacement = 0;
     max_displacement = 0.01;
@@ -54,8 +48,6 @@ function result = initialization()
     end
     
     epsilon = 50;
-%     lambda = 1 ./ (sqrt(sum((image1(1, i, :) - image1(1, j, :)) .^ 2, 3)) + epsilon);
-%     pairwise = sparse(i, j, lambda);
     n = 4 .* ones(height, width);
     n(:, 1) = 3;
     n(:, end) = 3;
@@ -66,10 +58,7 @@ function result = initialization()
     n(end, 1) = 2;
     n(end, end) = 2;
     n = reshape(n, 1, nodes_count);
-%     mu = n ./ full(sum(pairwise));
     w_s = 5 ./ (max_displacement - min_displacement);
-%     lambda = w_s .* lambda .* mu(i);
-%     pairwise = sparse(i, j, lambda);
 
     [x, y] = meshgrid(1:displacement, 1:displacement);
     eta = (max_displacement - min_displacement) * 0.05;
@@ -77,20 +66,7 @@ function result = initialization()
     
     [x, y] = meshgrid(1:width, 1:height);
     location1 = [x(:)'; y(:)'; ones(1, nodes_count)];
-%     pixel1 = impixel(image1, location1(1, :), location1(2, :));
-%     unary = zeros(displacement, nodes_count);
     sigma_c = 10;
-%     for d = 1:displacement
-%         location2 = k2 * r2' * r1 / k1 * location1 + k2 * r2' * (t1 - t2) * step * (d - 1);
-%         location2 = round(location2 ./ location2(3, :)); % normalize
-%         pixel2 = impixel(image2, location2(1, :), location2(2, :));
-%         pixel2(isnan(pixel2)) = 0;
-%         unary(d, :) = (sigma_c ./ (sigma_c + sqrt(sum((pixel1 - pixel2) .^ 2, 2))))';
-%     end
-%     unary = 1 - (unary ./ max(unary));
-%     [~, class] = min(unary); 
-%     class = class - 1;
-%     sigma_d = 2.5;
     
     num = 3;
     for n_current = num:140-num
