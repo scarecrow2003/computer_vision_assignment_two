@@ -76,7 +76,7 @@ function result = initialization1()
     loc_cen=[X(:)';Y(:)';ones(1,nodes_count)];
 
     for n_current=nei_num:140-nei_num
-        img_cen=double(imread(['.\Assignment2_A0186492R_YaoYuan\Road\src\test',sprintf('%04d',n_current),'.jpg']));
+        img_cen=double(imread([['Road' filesep 'src' filesep 'test'],sprintf('%04d',n_current),'.jpg']));
         img_cen_prime=reshape(img_cen,1,nodes_count,3);
 
         seq=n_current*7;
@@ -92,7 +92,7 @@ function result = initialization1()
 
         L_init=zeros(displacement,nodes_count);
         for b=[n_current-3,n_current-2,n_current-1,n_current+1,n_current+2,n_current+3]
-            img_nei=double(imread(['.\Assignment2_A0186492R_YaoYuan\Road\src\test',sprintf('%04d',b),'.jpg']));
+            img_nei=double(imread([['Road' filesep 'src' filesep 'test'],sprintf('%04d',b),'.jpg']));
             seq=b*7;
             K_nei=cameras(:,1+seq:3+seq)';
             R_nei=cameras(:,4+seq:6+seq)';
@@ -114,8 +114,8 @@ function result = initialization1()
         [label,~,~] = GCMex(segclass,single(unary),pairwise,single(labelcost),1);
         label=reshape(label,height,width);
         result=mat2gray(label);
-        imwrite(result,['.\Assignment2_A0186492R_YaoYuan\PART4_initialization\test',sprintf('%04d',n_current),'.jpg']);
-        save(['.\Assignment2_A0186492R_YaoYuan\PART4_initialization\test',sprintf('%04d',n_current),'.mat'],'label');
+        imwrite(result,[['initialization' filesep 'test'],sprintf('%04d',n_current),'.jpg']);
+        save([['initialization' filesep 'test'],sprintf('%04d',n_current),'.mat'],'label');
     end
 
 end
