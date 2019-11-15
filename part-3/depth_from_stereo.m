@@ -1,5 +1,5 @@
 function result = depth_from_stereo()
-    addpath('..')
+    addpath('..');
     image1 = double(imread('test00.jpg'));
     image2 = double(imread('test09.jpg'));
     [height, width, ~] = size(image1);

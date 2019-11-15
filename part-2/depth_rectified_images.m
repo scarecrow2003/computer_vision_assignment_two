@@ -1,5 +1,5 @@
 function result = depth_rectified_images()
-    addpath('..')
+    addpath('..');
     image1 = double(imread('im2.png'));
     image2 = double(imread('im6.png'));
     [height, width, ~] = size(image1);
