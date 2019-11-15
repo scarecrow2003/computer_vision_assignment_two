@@ -1,4 +1,4 @@
-function result = initialization1()
+function result = initialization()
     addpath('..');
     addpath('Road');
     addpath(['Road' filesep 'src']);
