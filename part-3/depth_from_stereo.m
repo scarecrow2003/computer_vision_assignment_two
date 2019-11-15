@@ -24,16 +24,15 @@ function result = depth_from_stereo()
     location1 = [x(:)'; y(:)'; ones(1, nodes_count)];
     pixel1 = impixel(image1, location1(1, :), location1(2, :));
     unary = zeros(displacement, nodes_count);
-%     sigma = 10;
+    sigma_c = 10;
     for d = 1:displacement
         location2 = k2 * r2' * r1 / k1 * location1 + k2 * r2' * (t1 - t2) * step * (d - 1);
         location2 = round(location2 ./ location2(3, :)); % normalize
         pixel2 = impixel(image2, location2(1, :), location2(2, :));
         pixel2(isnan(pixel2)) = 0;
-%         unary(d, :) = (sigma ./ (sigma + sqrt(sum((pixel1 - pixel2) .^ 2, 2))))';
-        unary(d, :) = (sum(abs(pixel1 - pixel2), 2) / 3)';
+        unary(d, :) = (sigma_c ./ (sigma_c + sqrt(sum((pixel1 - pixel2) .^ 2, 2))))';
     end
-%     unary = 1 - (unary ./ max(unary));
+    unary = 1 - (unary ./ max(unary));
     [~, class] = min(unary); 
     class = class - 1;
     
@@ -69,31 +68,28 @@ function result = depth_from_stereo()
         end
     end
     
-%     image1 = reshape(image1, 1, nodes_count, 3);
-%     epsilon = 50;
-%     lambda = 1 ./ (sqrt(sum((image1(1, i, :) - image1(1, j, :)) .^ 2, 3)) + epsilon);
-%     pairwise = sparse(i, j, lambda);
-%     nei = 4 .* ones(height, width);
-%     nei(:, 1) = 3;
-%     nei(:, end) = 3;
-%     nei(1, :) = 3;
-%     nei(end, :) = 3;
-%     nei(1, 1) = 2;
-%     nei(1, end) = 2;
-%     nei(end, 1) = 2;
-%     nei(end, end) = 2;
-%     nei = reshape(nei, 1, nodes_count);
-%     u = nei ./ full(sum(pairwise));
-%     ws = 10 ./ (max_displacement - min_displacement);
-%     lambda = ws .* lambda .* u(i);
-    lambda = 20;
+    image1 = reshape(image1, 1, nodes_count, 3);
+    epsilon = 50;
+    lambda = 1 ./ (sqrt(sum((image1(1, i, :) - image1(1, j, :)) .^ 2, 3)) + epsilon);
+    pairwise = sparse(i, j, lambda);
+    n = 4 .* ones(height, width);
+    n(:, 1) = 3;
+    n(:, end) = 3;
+    n(1, :) = 3;
+    n(end, :) = 3;
+    n(1, 1) = 2;
+    n(1, end) = 2;
+    n(end, 1) = 2;
+    n(end, end) = 2;
+    n = reshape(n, 1, nodes_count);
+    mu = n ./ full(sum(pairwise));
+    w_s = 5 ./ (max_displacement - min_displacement);
+    lambda = w_s .* lambda .* mu(i);
     pairwise = sparse(i, j, lambda);
 
-%     [x, y] = meshgrid(1:displacement, 1:displacement);
-%     eta = (max_displacement - min_displacement) * 0.05;
-%     label_cost = single(min(step .* abs(x - y), eta));
-    a = 1:101;
-    label_cost = single(log(1 + ((a - a').^2) / 2));
+    [x, y] = meshgrid(1:displacement, 1:displacement);
+    eta = (max_displacement - min_displacement) * 0.05;
+    label_cost = single(min(step .* abs(x - y), eta));
 
     [label, ~, ~] = GCMex(class, single(unary), pairwise, label_cost, 1);
     label = reshape(label , [height, width]);
