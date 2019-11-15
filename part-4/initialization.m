@@ -7,6 +7,7 @@ function result = initialization()
     nodes_count = width * height;
     
     file = fopen(['Road' filesep 'cameras.txt'], 'r');
+    total_frame = fscanf(file, '%f', [1, 1]);
     cameras = fscanf(file, '%f %f %f', [3, Inf]);
     fclose(file);
     

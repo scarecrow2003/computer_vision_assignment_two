@@ -7,6 +7,7 @@ function result = initialization1()
     nodes_count = height * width;
     
     file = fopen(['Road' filesep 'cameras.txt'],'r');
+    total_frame = fscanf(file, '%f', [1, 1]);
     cameras = fscanf(file, '%f %f %f', [3,Inf]);
     fclose(file);
     
@@ -21,98 +22,94 @@ function result = initialization1()
     current = 1;
     for x = 1:width
         for y = 1:height
-            n = (x - 1) * height + y;
+            n_current = (x - 1) * height + y;
             if y < height
-                i(current) = n;
-                j(current) = n + 1;
+                i(current) = n_current;
+                j(current) = n_current + 1;
                 current = current + 1;
             end
             if y > 1
-                i(current) = n;
-                j(current) = n - 1;
+                i(current) = n_current;
+                j(current) = n_current - 1;
                 current = current + 1;
             end
             if x < width
-                i(current) = n;
-                j(current) = n + height;
+                i(current) = n_current;
+                j(current) = n_current + height;
                 current = current + 1;
             end
             if x > 1
-                i(current) = n;
-                j(current) = n - height;
+                i(current) = n_current;
+                j(current) = n_current - height;
                 current = current + 1;
             end
         end
     end
     
-    eta=0.05.*(max_displacement-min_displacement);
-    epsilon=50;
-    ws=5./(max_displacement-min_displacement);
-    sigmac=10;
-    sigmad=2.5;
-    nei_num=3;
-    iter_num=2;
-
+    epsilon = 50;
+    n = 4 .* ones(height, width);
+    n(:, 1) = 3;
+    n(:, end) = 3;
+    n(1, :) = 3;
+    n(end, :) = 3;
+    n(1, 1) = 2;
+    n(1, end) = 2;
+    n(end, 1) = 2;
+    n(end, end) = 2;
+    n = reshape(n, 1, nodes_count);
+    w_s = 5 ./ (max_displacement - min_displacement);
     
+    [x, y] = meshgrid(1:displacement, 1:displacement);
+    eta = (max_displacement - min_displacement) * 0.05;
+    label_cost = single(min(step .* abs(x - y), eta));
 
-    nei=4.*ones(height,width);
-    nei(:,1)=3;
-    nei(:,end)=3;
-    nei(1,:)=3;
-    nei(end,:)=3;
-    nei(1,1)=2;
-    nei(1,end)=2;
-    nei(end,1)=2;
-    nei(end,end)=2;
-    nei=reshape(nei,1,nodes_count);
+    [x, y] = meshgrid(1:width, 1:height);
+    location1 = [x(:)'; y(:)'; ones(1,nodes_count)];
+    sigma_c = 10;
 
-    [label_X,label_Y]=meshgrid(1:displacement,1:displacement);
-    labelcost=min(step.*abs(label_X-label_Y),eta);
+    num = 3;
+    for n_current = num:140-num
+        image1 = double(imread([['Road' filesep 'src' filesep 'test'], sprintf('%04d', n_current), '.jpg']));
+        camera_start = n_current * 7;
+        k1 = cameras(:, 1+camera_start:3+camera_start)';
+        r1 = cameras(:, 4+camera_start:6+camera_start)';
+        t1 = cameras(:, 7+camera_start);
+        
+        u_init = zeros(displacement, nodes_count);
+        for s = [n_current-3, n_current-2, n_current-1, n_current+1, n_current+2, n_current+3]
+            image2 = double(imread([['Road' filesep 'src' filesep 'test'], sprintf('%04d',s), '.jpg']));
+            camera_start = s * 7;
+            k2 = cameras(:, 1+camera_start:3+camera_start)';
+            r2 = cameras(:, 4+camera_start:6+camera_start)';
+            t2 = cameras(:, 7+camera_start);
 
-    [X,Y]=meshgrid(1:width,1:height);
-    loc_cen=[X(:)';Y(:)';ones(1,nodes_count)];
-
-    for n=nei_num:140-nei_num
-        img_cen=double(imread([['Road' filesep 'src' filesep 'test'],sprintf('%04d',n),'.jpg']));
-        img_cen_prime=reshape(img_cen,1,nodes_count,3);
-
-        seq=n*7;
-        K_cen=cameras(:,1+seq:3+seq)';
-        R_cen=cameras(:,4+seq:6+seq)';
-        T_cen=cameras(:,7+seq);
-
-        lambda=1./(sqrt(sum((img_cen_prime(1,i,:)-img_cen_prime(1,j,:)).^2,3))+epsilon);
-        prior=sparse(i,j,lambda);
-        u=nei./full(sum(prior));
-        lambda=ws.*lambda.*u(i);
-        pairwise=sparse(i,j,lambda);
-
-        L_init=zeros(displacement,nodes_count);
-        for b=[n-3,n-2,n-1,n+1,n+2,n+3]
-            img_nei=double(imread([['Road' filesep 'src' filesep 'test'],sprintf('%04d',b),'.jpg']));
-            seq=b*7;
-            K_nei=cameras(:,1+seq:3+seq)';
-            R_nei=cameras(:,4+seq:6+seq)';
-            T_nei=cameras(:,7+seq);
-
-            pix_cen=impixel(img_cen,loc_cen(1,:),loc_cen(2,:));
-            for dis=1:displacement
-                loc_nei=K_nei*R_nei'*R_cen/K_cen*loc_cen+K_nei*R_nei'*(T_cen-T_nei).*step.*(dis-1);
-                loc_nei=round(loc_nei./loc_nei(3,:));
-                pix_nei=impixel(img_nei, loc_nei(1,:), loc_nei(2,:));
-                pix_nei(isnan(pix_nei))=0;
-                pc(dis,:)=(sigmac./(sigmac+sqrt(sum((pix_cen-pix_nei).^2,2))))';
+            pixel1 = impixel(image1, location1(1, :), location1(2, :));
+            u = zeros(displacement, nodes_count);
+            for d = 1:displacement
+                location2 = k2 * r2' * r1 / k1 * location1 + k2 * r2' * (t1 - t2) * step * (d - 1);
+                location2 = round(location2 ./ location2(3, :));
+                pixel2 = impixel(image2, location2(1, :), location2(2, :));
+                pixel2(isnan(pixel2)) = 0;
+                u(d, :) = (sigma_c ./ (sigma_c + sqrt(sum((pixel1 - pixel2) .^ 2, 2))))';
             end
-            L_init=L_init+pc;
+            u_init = u_init + u;
         end
-        unary=1-L_init./max(L_init);
-        [~,segclass]=min(unary); 
-        segclass=segclass-1;
-        [label,~,~] = GCMex(segclass,single(unary),pairwise,single(labelcost),1);
-        label=reshape(label,height,width);
-        result=mat2gray(label);
-        imwrite(result,[['initialization' filesep 'test'],sprintf('%04d',n),'.jpg']);
-        save([['initialization' filesep 'test'],sprintf('%04d',n),'.mat'],'label');
+        unary = 1 - u_init ./ max(u_init);
+        [~, class] = min(unary); 
+        class = class-1;
+        
+        image1 = reshape(image1, 1, nodes_count, 3);
+        lambda = 1 ./ (sqrt(sum((image1(1, i, :) - image1(1, j, :)) .^ 2, 3)) + epsilon);
+        pairwise = sparse(i, j, lambda);
+        mu = n ./ full(sum(pairwise));
+        lambda = w_s .* lambda .* mu(i);
+        pairwise = sparse(i, j, lambda);
+        
+        [label, ~, ~] = GCMex(class, single(unary), pairwise, label_cost, 1);
+        label = reshape(label, height, width);
+        result = mat2gray(label);
+        imwrite(result, [['initialization' filesep 'test'], sprintf('%04d', n_current), '.jpg']);
+        save([['initialization' filesep 'test'], sprintf('%04d', n_current), '.mat'], 'label');
     end
 
 end
