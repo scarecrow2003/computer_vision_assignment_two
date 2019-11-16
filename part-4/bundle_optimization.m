@@ -66,6 +66,7 @@ function result = bundle_optimization()
     [x, y] = meshgrid(1:width, 1:height);
     location1 = [x(:)'; y(:)'; ones(1,nodes_count)];
     sigma_c = 10;
+    sigma_d = 2.5;
 
     n_num = 3;
     total_rounds = 2;
@@ -74,7 +75,7 @@ function result = bundle_optimization()
             folder = 'initialization';
             n_start = n_num * 2;
         else
-            folder = ['bundle_optimization' filesep sprintf('iter_%d', current_round)];
+            folder = ['bundle_optimization' filesep sprintf('iter_%d', current_round - 1)];
             n_start = n_num * 3;
         end
         for n_current = n_start:total_frame-n_start-1
