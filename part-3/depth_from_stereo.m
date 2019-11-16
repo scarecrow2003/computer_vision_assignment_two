@@ -40,29 +40,27 @@ function result = depth_from_stereo()
     i = zeros(total_edges, 1);
     j = zeros(total_edges, 1);
     current = 1;
-    for y = 1:height
-        for x = 1:width
-            node = (y-1) * width + x;
-            if x < width
-                i(current) = node;
-                j(current) = node + 1;
-                current = current + 1;
-            end
-            if x > 1
-                i(current) = node;
-                j(current) = node - 1;
-                current = current + 1;
-            end
+    for x = 1:width
+        for y = 1:height
+            n_current = (x - 1) * height + y;
             if y < height
-                below = y * width + x;
-                i(current) = node;
-                j(current) = below;
+                i(current) = n_current;
+                j(current) = n_current + 1;
                 current = current + 1;
             end
             if y > 1
-                above = (y-1) * width + x;
-                i(current) = node;
-                j(current) = above;
+                i(current) = n_current;
+                j(current) = n_current - 1;
+                current = current + 1;
+            end
+            if x < width
+                i(current) = n_current;
+                j(current) = n_current + height;
+                current = current + 1;
+            end
+            if x > 1
+                i(current) = n_current;
+                j(current) = n_current - height;
                 current = current + 1;
             end
         end
