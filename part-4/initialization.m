@@ -68,7 +68,7 @@ function result = initialization()
     sigma_c = 10;
 
     num = 3;
-    for n_current = num:140-num
+    for n_current = num:total_frame-num-1
         image1 = double(imread([['Road' filesep 'src' filesep 'test'], sprintf('%04d', n_current), '.jpg']));
         camera_start = n_current * 7;
         k1 = cameras(:, 1+camera_start:3+camera_start)';
